@@ -125,22 +125,22 @@ def health():
 
 
 # ---------- REACT SPA FALLBACK ----------
-# ---------- REACT ROUTES ----------
+# ---------- REACT SPA ROUTING (VERY IMPORTANT) ----------
+
 @app.route("/", defaults={"path": ""})
 @app.route("/<path:path>")
 def serve_react(path):
-    # Serve static assets normally
+    # API routes should NOT go to React
+    if path.startswith("api"):
+        return jsonify({"error": "Not Found"}), 404
+
+    # Serve static files if they exist
     file_path = os.path.join(app.static_folder, path)
-    if path and os.path.exists(file_path):
+    if path != "" and os.path.exists(file_path):
         return send_from_directory(app.static_folder, path)
 
-    # Ignore API routes
-    if path.startswith("api"):
-        return jsonify({"error": "Not found"}), 404
-
-    # Fallback to React
+    # Otherwise always return React index.html
     return send_from_directory(app.static_folder, "index.html")
-
 
 
 
