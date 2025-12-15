@@ -25,25 +25,33 @@ import {
 
 /* ---------------- KPI CARD ---------------- */
 const KPICard = ({ data }) => (
-  <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 hover:border-emerald-500/30 transition-all duration-300 relative overflow-hidden group">
-    <div className="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+  <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 hover:border-emerald-500/30 transition-all duration-300 shadow-sm relative overflow-hidden group">
+    <div className="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
     <div className="flex justify-between items-start mb-4 relative z-10">
       <div>
-        <h3 className="text-slate-400 text-sm mb-1">{data.title}</h3>
-        <div className="text-3xl font-bold text-white">{data.value}</div>
+        <h3 className="text-slate-400 text-sm font-medium mb-1">
+          {data.title}
+        </h3>
+        <div className="text-3xl font-bold text-white">
+          {data.value}
+        </div>
       </div>
       <div className={`p-3 rounded-xl ${data.bgColor} border border-white/5`}>
         <data.icon className={`w-6 h-6 ${data.color}`} />
       </div>
     </div>
-    <p className="text-slate-500 text-sm relative z-10">{data.subtext}</p>
+
+    <p className="text-slate-500 text-sm relative z-10">
+      {data.subtext}
+    </p>
   </div>
 );
 
 /* ---------------- REVIEW CARD ---------------- */
 const ReviewCard = ({ review }) => {
-  const getStarColor = (i) => {
-    if (i < review.rating) {
+  const getStarColor = (index) => {
+    if (index < review.rating) {
       if (review.rating >= 4) return "text-emerald-400 fill-emerald-400";
       if (review.rating === 3) return "text-amber-400 fill-amber-400";
       return "text-rose-400 fill-rose-400";
@@ -52,35 +60,43 @@ const ReviewCard = ({ review }) => {
   };
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900 p-6 hover:border-emerald-500/30 transition-all flex flex-col">
-      <div className="flex justify-between mb-4">
+    <div className="rounded-xl border border-slate-800 bg-slate-900 p-6 transition-all hover:border-emerald-500/30 flex flex-col h-full group">
+      <div className="flex justify-between items-start mb-4">
         <div className="flex gap-1">
           {[...Array(5)].map((_, i) => (
             <Star key={i} className={`w-4 h-4 ${getStarColor(i)}`} />
           ))}
         </div>
-        <span className="text-xs text-slate-500">{review.date}</span>
+        <span className="text-xs text-slate-500 font-mono">
+          {review.date}
+        </span>
       </div>
 
-      <p className="text-slate-300 text-sm mb-6 flex-grow">
+      <p className="text-slate-300 text-sm leading-relaxed mb-6 flex-grow">
         "{review.text}"
       </p>
 
-      <div className="space-y-3">
-        <div className="bg-slate-950/50 p-4 rounded-lg border border-slate-800">
-          <div className="flex items-center gap-2 text-xs text-indigo-400 font-bold mb-2">
-            <Brain className="w-3 h-3" /> AI Summary
+      <div className="space-y-3 mt-auto">
+        <div className="bg-slate-950/50 rounded-lg p-4 border border-slate-800">
+          <div className="flex items-center gap-2 mb-2 text-xs font-bold text-indigo-400 uppercase tracking-wider">
+            <Brain className="w-3.5 h-3.5" />
+            AI Summary
           </div>
-          <p className="text-xs text-slate-400">{review.aiSummary}</p>
+          <p className="text-xs text-slate-400">
+            {review.aiSummary}
+          </p>
         </div>
 
-        <div className="bg-slate-950/50 p-4 rounded-lg border border-slate-800 hover:border-emerald-500/20 transition">
-          <div className="flex items-center gap-2 text-xs text-emerald-400 font-bold mb-2">
-            <Zap className="w-3 h-3" /> Recommended Action
+        <div className="bg-slate-950/50 rounded-lg p-4 border border-slate-800 group-hover:border-emerald-500/20 transition-colors">
+          <div className="flex items-center gap-2 mb-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
+            <Zap className="w-3.5 h-3.5" />
+            Recommended Action
           </div>
           <div className="flex justify-between items-center">
-            <p className="text-xs text-slate-400">{review.action}</p>
-            <ArrowRight className="w-3 h-3 text-emerald-500" />
+            <p className="text-xs text-slate-400">
+              {review.action}
+            </p>
+            <ArrowRight className="w-3.5 h-3.5 text-emerald-500 opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-1" />
           </div>
         </div>
       </div>
@@ -107,11 +123,30 @@ export default function AdminDashboard() {
         const summary = await summaryRes.json();
         const reviewList = await reviewsRes.json();
 
-        /* KPI */
+        /* ---------- MAP REVIEWS ---------- */
+        const mappedReviews = reviewList.map((r, i) => ({
+          id: i,
+          rating: Number(r.rating),
+          date: new Date(r.timestamp).toLocaleString(),
+          text: r.review,
+          aiSummary: r.ai_summary,
+          action: r.action,
+        }));
+
+        setReviews(mappedReviews.slice().reverse());
+
+        /* ---------- KPI CALCULATIONS ---------- */
+        const total = mappedReviews.length;
+        const positiveCount = mappedReviews.filter(r => r.rating >= 4).length;
+        const positivePercent = total ? Math.round((positiveCount / total) * 100) : 0;
+        const actionableCount = mappedReviews.filter(
+          r => r.action && r.action.toLowerCase() !== "ok"
+        ).length;
+
         setKpiData([
           {
             title: "Total Reviews",
-            value: String(summary.total_reviews),
+            value: String(total),
             subtext: "All time feedback",
             icon: FileText,
             color: "text-emerald-400",
@@ -125,22 +160,27 @@ export default function AdminDashboard() {
             color: "text-emerald-400",
             bgColor: "bg-emerald-400/10",
           },
+          {
+            title: "Positive Sentiment",
+            value: `${positivePercent}%`,
+            subtext: `${positiveCount} positive reviews`,
+            icon: TrendingUp,
+            color: "text-emerald-400",
+            bgColor: "bg-emerald-400/10",
+          },
+          {
+            title: "Actionable Items",
+            value: String(actionableCount),
+            subtext: "Needs attention",
+            icon: AlertCircle,
+            color: "text-emerald-400",
+            bgColor: "bg-emerald-400/10",
+          },
         ]);
 
-        /* Reviews */
-        const mappedReviews = reviewList.map((r, i) => ({
-          id: i,
-          rating: Number(r.rating),
-          date: new Date(r.timestamp).toLocaleString(),
-          text: r.review,
-          aiSummary: r.ai_summary,
-          action: r.action,
-        }));
-        setReviews(mappedReviews.reverse());
-
-        /* Rating Distribution */
+        /* ---------- RATING DISTRIBUTION ---------- */
         const buckets = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-        mappedReviews.forEach((r) => buckets[Math.ceil(r.rating)]++);
+        mappedReviews.forEach(r => buckets[Math.ceil(r.rating)]++);
 
         setRatingDistData([
           { stars: "1 Star", count: buckets[1], color: "#ef4444" },
@@ -150,9 +190,9 @@ export default function AdminDashboard() {
           { stars: "5 Stars", count: buckets[5], color: "#15803d" },
         ]);
 
-        /* Trend */
+        /* ---------- TREND DATA ---------- */
         const trendMap = {};
-        mappedReviews.forEach((r) => {
+        mappedReviews.forEach(r => {
           const day = r.date.split(",")[0];
           trendMap[day] = (trendMap[day] || 0) + 1;
         });
@@ -165,8 +205,8 @@ export default function AdminDashboard() {
         );
 
         setLoading(false);
-      } catch (e) {
-        console.error(e);
+      } catch (err) {
+        console.error(err);
       }
     }
 
@@ -182,38 +222,41 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 p-6">
+    <div className="min-h-screen bg-slate-950 text-slate-200 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
 
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-emerald-600 rounded-xl">
-              <BarChart2 className="text-white w-6 h-6" />
+              <BarChart2 className="w-6 h-6 text-white" />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
               <p className="text-slate-400 text-sm">
-                AI-powered feedback analytics
+                AI-powered feedback analytics and insights
               </p>
             </div>
           </div>
           <button className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 rounded-lg">
-            <Filter className="w-4 h-4" /> Filter
+            <Filter className="w-4 h-4" />
+            Filter
           </button>
         </div>
 
-        {/* KPI */}
+        {/* KPI GRID */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {kpiData.map((kpi, i) => (
-            <KPICard key={i} data={kpi} />
+          {kpiData.map((kpi, idx) => (
+            <KPICard key={idx} data={kpi} />
           ))}
         </div>
 
-        {/* Charts */}
+        {/* CHARTS */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-slate-900 p-6 rounded-xl border border-slate-800">
-            <h3 className="font-bold mb-4">Rating Distribution</h3>
+            <h3 className="text-lg font-bold text-white mb-4">
+              Rating Distribution
+            </h3>
             <ResponsiveContainer width="100%" height={260}>
               <BarChart layout="vertical" data={ratingDistData}>
                 <XAxis type="number" hide />
@@ -229,7 +272,9 @@ export default function AdminDashboard() {
           </div>
 
           <div className="bg-slate-900 p-6 rounded-xl border border-slate-800">
-            <h3 className="font-bold mb-4">Reviews Over Time</h3>
+            <h3 className="text-lg font-bold text-white mb-4">
+              Reviews Over Time
+            </h3>
             <ResponsiveContainer width="100%" height={260}>
               <AreaChart data={trendData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -248,12 +293,14 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Reviews */}
+        {/* REVIEWS */}
         <div>
-          <h2 className="text-xl font-bold mb-4">All Feedback</h2>
+          <h2 className="text-xl font-bold text-white mb-4">
+            All Feedback
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {reviews.map((r) => (
-              <ReviewCard key={r.id} review={r} />
+            {reviews.map(review => (
+              <ReviewCard key={review.id} review={review} />
             ))}
           </div>
         </div>
