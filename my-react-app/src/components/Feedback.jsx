@@ -38,7 +38,7 @@ export default function Feedback() {
     if (!rating) return;
     setLoading(true);
     try {
-      await fetch("https://YOUR-BACKEND.onrender.com/api/feedback", {
+     await fetch("https://fynd-project-1.onrender.com/api/feedback", {
 
         method: "POST",
         headers: { "Content-Type": "application/json" },

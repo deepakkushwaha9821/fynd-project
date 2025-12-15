@@ -96,7 +96,8 @@ export default function AdminDashboard() {
   const [error, setError] = useState(null);
 
   // ✅ PUT YOUR REAL RENDER URL HERE
-  const BASE_URL = "https://YOUR-BACKEND.onrender.com";
+ const BASE_URL = "https://fynd-project-1.onrender.com";
+
 
   useEffect(() => {
     async function loadData() {
