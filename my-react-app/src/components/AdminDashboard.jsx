@@ -64,7 +64,7 @@ function ReviewCard({ review }) {
           ))}
         </div>
         <span className="text-xs text-slate-500">
-          {review.date || "—"}
+          {review.timestamp || "—"}
         </span>
       </div>
 
@@ -95,36 +95,35 @@ function ReviewCard({ review }) {
 
 /* ---------------- MAIN DASHBOARD ---------------- */
 
-export default function Dashboard() {
+export default function AdminDashboard() {
   const [summary, setSummary] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-  async function loadData() {
-    try {
-      const summaryRes = await fetch("/api/admin/summary");
-      const reviewsRes = await fetch("/api/admin/reviews");
+    async function loadData() {
+      try {
+        const summaryRes = await fetch("/api/admin/summary");
+        const reviewsRes = await fetch("/api/admin/reviews");
 
-      if (!summaryRes.ok || !reviewsRes.ok) {
-        throw new Error("API error");
+        if (!summaryRes.ok || !reviewsRes.ok) {
+          throw new Error("API error");
+        }
+
+        const summaryData = await summaryRes.json();
+        const reviewsData = await reviewsRes.json();
+
+        setSummary(summaryData);
+        setReviews(Array.isArray(reviewsData) ? reviewsData : []);
+        setError(null);
+      } catch (err) {
+        console.error("ADMIN FETCH ERROR:", err);
+        setError("Failed to load admin data");
       }
-
-      const summaryData = await summaryRes.json();
-      const reviewsData = await reviewsRes.json();
-
-      setSummary(summaryData);
-      setReviews(Array.isArray(reviewsData) ? reviewsData : []);
-      setError(null);
-    } catch (err) {
-      console.error("ADMIN FETCH ERROR:", err);
-      setError("Backend not reachable");
     }
-  }
 
-  loadData();
-}, []);
-
+    loadData();
+  }, []);
 
   if (error) {
     return (
@@ -142,22 +141,15 @@ export default function Dashboard() {
     );
   }
 
-  /* ---------------- FIX 1: RATING DISTRIBUTION ---------------- */
-  /* EXACTLY ONE BAR PER STAR */
+  /* ---------------- RATING DISTRIBUTION (1 BAR PER STAR) ---------------- */
 
-  const ratingBuckets = {
-    1: 0,
-    2: 0,
-    3: 0,
-    4: 0,
-    5: 0,
-  };
+  const ratingBuckets = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
 
   reviews.forEach((r) => {
     const rating = Number(r.rating);
     if (!rating) return;
 
-    const bucket = Math.ceil(rating); // 1.5 → 2★
+    const bucket = Math.ceil(rating);
     if (bucket >= 1 && bucket <= 5) {
       ratingBuckets[bucket] += 1;
     }
@@ -171,36 +163,23 @@ export default function Dashboard() {
     })
   );
 
-  /* ---------------- FIX 2: REVIEWS OVER TIME ---------------- */
+  /* ---------------- REVIEWS OVER TIME ---------------- */
 
- /* ---------------- REVIEWS OVER TIME (FIXED FOR TIMESTAMP) ---------------- */
+  const trendMap = {};
 
-const trendMap = {};
+  reviews.forEach((r) => {
+    if (!r.timestamp) return;
 
-reviews.forEach((r) => {
-  if (!r.timestamp) return;
+    let day = r.timestamp.includes("T")
+      ? r.timestamp.split("T")[0]
+      : r.timestamp.split(" ")[0];
 
-  let day = null;
+    trendMap[day] = (trendMap[day] || 0) + 1;
+  });
 
-  // Case 1: ISO format (2025-12-15T01:37:19)
-  if (r.timestamp.includes("T")) {
-    day = r.timestamp.split("T")[0];
-  }
-
-  // Case 2: Space format (2025-12-14 21:53:21.424411)
-  else if (r.timestamp.includes(" ")) {
-    day = r.timestamp.split(" ")[0];
-  }
-
-  if (!day) return;
-
-  trendMap[day] = (trendMap[day] || 0) + 1;
-});
-
-const trendData = Object.entries(trendMap)
-  .map(([date, reviews]) => ({ date, reviews }))
-  .sort((a, b) => new Date(a.date) - new Date(b.date));
-
+  const trendData = Object.entries(trendMap)
+    .map(([date, reviews]) => ({ date, reviews }))
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
 
   /* ---------------- RENDER ---------------- */
 
@@ -230,30 +209,26 @@ const trendData = Object.entries(trendMap)
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
         <KPICard
           title="Total Reviews"
-          value={summary.total_reviews ?? reviews.length}
+          value={summary.total_reviews}
           subtext="All time feedback"
           Icon={FileText}
         />
         <KPICard
           title="Average Rating"
-          value={
-            summary.avg_rating
-              ? Number(summary.avg_rating).toFixed(2)
-              : "0.00"
-          }
+          value={summary.avg_rating.toFixed(2)}
           subtext="Out of 5 stars"
           Icon={Star}
         />
         <KPICard
           title="Positive Sentiment"
-          value={`${summary.positive_percent ?? 0}%`}
-          subtext="Positive reviews"
+          value="—"
+          subtext="Not calculated yet"
           Icon={TrendingUp}
         />
         <KPICard
           title="Actionable Items"
-          value={summary.action_items ?? 0}
-          subtext="Needs attention"
+          value="—"
+          subtext="Not calculated yet"
           Icon={AlertCircle}
         />
       </div>
