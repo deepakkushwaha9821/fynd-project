@@ -13,8 +13,9 @@ FRONTEND_DIST = os.path.join(BASE_DIR, "../my-react-app/dist")
 app = Flask(
     __name__,
     static_folder=FRONTEND_DIST,
-    static_url_path="/"
+    static_url_path=""
 )
+
 
 
 
@@ -125,13 +126,21 @@ def health():
 
 # ---------- REACT SPA FALLBACK ----------
 # ---------- REACT ROUTES ----------
-@app.route("/")
-def root():
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
+def serve_react(path):
+    # Serve static assets normally
+    file_path = os.path.join(app.static_folder, path)
+    if path and os.path.exists(file_path):
+        return send_from_directory(app.static_folder, path)
+
+    # Ignore API routes
+    if path.startswith("api"):
+        return jsonify({"error": "Not found"}), 404
+
+    # Fallback to React
     return send_from_directory(app.static_folder, "index.html")
 
-@app.errorhandler(404)
-def react_fallback(e):
-    return send_from_directory(app.static_folder, "index.html")
 
 
 
