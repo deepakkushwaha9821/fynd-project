@@ -13,7 +13,7 @@ FRONTEND_DIST = os.path.join(BASE_DIR, "../my-react-app/dist")
 app = Flask(
     __name__,
     static_folder=FRONTEND_DIST,
-    static_url_path="/assets"
+    static_url_path="/"
 )
 
 
@@ -265,3 +265,4 @@ if __name__ == "__main__":
 
 # if __name__ == "__main__":
 #     app.run(host="0.0.0.0", port=5000)
+
