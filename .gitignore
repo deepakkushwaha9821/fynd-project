@@ -1,0 +1,26 @@
+# -------- Python --------
+__pycache__/
+*.pyc
+.venv/
+env/
+venv/
+
+# -------- Environment --------
+.env
+
+# -------- Node / React --------
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# -------- Vite / React build (IMPORTANT) --------
+# ❌ DO NOT ignore dist (we NEED dist for deployment)
+# dist/
+
+# -------- OS --------
+.DS_Store
+Thumbs.db
+
+# -------- Editor --------
+.vscode/
+.idea/

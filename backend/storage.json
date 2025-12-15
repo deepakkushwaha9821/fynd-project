@@ -1,0 +1,38 @@
+[
+  {
+    "timestamp": "2025-12-14 21:53:21.424411",
+    "rating": "2",
+    "review": "good",
+    "ai_response": "good",
+    "summary": "Average experience",
+    "action": "Improve product quality"
+  },
+  {
+    "timestamp": "2025-12-15T00:25:12",
+    "rating": 0.5,
+    "review": "not good",
+    "ai_summary": "Poor experience",
+    "action": "Improve quality"
+  },
+  {
+    "timestamp": "2025-12-15T01:14:07",
+    "rating": 3.0,
+    "review": "good",
+    "ai_summary": "Neutral review with a rating of 3.0",
+    "action": "Improve to provide more details"
+  },
+  {
+    "timestamp": "2025-12-15T01:37:19",
+    "rating": 1.0,
+    "review": "very bad ",
+    "ai_summary": "Poor experience",
+    "action": "Improve quality"
+  },
+  {
+    "timestamp": "2025-12-15T08:28:20",
+    "rating": 2.0,
+    "review": "dilvery probelm",
+    "ai_summary": "Poor delivery experience.",
+    "action": "Improve delivery logistics."
+  }
+]
