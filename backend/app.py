@@ -267,21 +267,21 @@
 #     app.run(host="0.0.0.0", port=5000)
 
 
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from datetime import datetime
 import json, os
 from ai import generate_ai_outputs
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-FRONTEND_DIST = os.path.join(BASE_DIR, "../my-react-app/dist")
+FRONTEND_DIST = os.path.abspath(os.path.join(BASE_DIR, "../my-react-app/dist"))
 
 app = Flask(__name__, static_folder=FRONTEND_DIST, static_url_path="")
 CORS(app)
 
 DATA_FILE = "storage.json"
 
-# ---------- HELPERS ----------
+# ---------------- STORAGE ----------------
 def load_data():
     try:
         with open(DATA_FILE, "r") as f:
@@ -293,7 +293,7 @@ def save_data(data):
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=2)
 
-# ---------- API ROUTES ----------
+# ---------------- API ----------------
 @app.route("/api/feedback", methods=["POST"])
 def submit_feedback():
     payload = request.json
@@ -329,22 +329,20 @@ def admin_summary():
 def admin_reviews():
     return jsonify(load_data())
 
-@app.route("/api/health")
-def health():
-    return jsonify({"status": "ok"})
+# ---------------- STATIC FILES ----------------
+@app.route("/assets/<path:filename>")
+def assets(filename):
+    return send_from_directory(os.path.join(FRONTEND_DIST, "assets"), filename)
 
-# ---------- SPA FALLBACK (THIS IS THE KEY) ----------
+# ---------------- SPA FALLBACK ----------------
 @app.route("/", defaults={"path": ""})
 @app.route("/<path:path>")
-def serve_react(path):
+def react_app(path):
     if path.startswith("api"):
         return jsonify({"error": "Not Found"}), 404
 
-    file_path = os.path.join(app.static_folder, path)
+    file_path = os.path.join(FRONTEND_DIST, path)
     if path and os.path.exists(file_path):
-        return send_from_directory(app.static_folder, path)
+        return send_from_directory(FRONTEND_DIST, path)
 
-    return send_from_directory(app.static_folder, "index.html")
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    return send_from_directory(FRONTEND_DIST, "index.html")
