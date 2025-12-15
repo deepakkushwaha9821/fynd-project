@@ -102,8 +102,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     Promise.all([
-      fetch("http://127.0.0.1:5000/api/admin/summary").then((r) => r.json()),
-      fetch("http://127.0.0.1:5000/api/admin/reviews").then((r) => r.json()),
+      fetch("/api/admin/summary").then((r) => r.json()),
+      fetch("/api/admin/reviews").then((r) => r.json()),
     ])
       .then(([s, r]) => {
         setSummary(s || {});
