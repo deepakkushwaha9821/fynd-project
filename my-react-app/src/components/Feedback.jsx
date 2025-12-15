@@ -38,7 +38,7 @@ export default function Feedback() {
     if (!rating) return;
     setLoading(true);
     try {
-      await fetch("http://127.0.0.1:5000/api/feedback", {
+      await fetch("/api/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rating, review: feedback }),
