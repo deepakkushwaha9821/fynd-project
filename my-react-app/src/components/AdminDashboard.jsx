@@ -23,7 +23,6 @@ import {
 } from "lucide-react";
 
 /* ---------------- KPI CARD ---------------- */
-
 function KPICard({ title, value, subtext, Icon }) {
   return (
     <div className="bg-slate-900 p-6 rounded-xl border border-slate-800">
@@ -42,7 +41,6 @@ function KPICard({ title, value, subtext, Icon }) {
 }
 
 /* ---------------- REVIEW CARD ---------------- */
-
 function ReviewCard({ review }) {
   const rating = Number(review.rating || 0);
 
@@ -56,8 +54,6 @@ function ReviewCard({ review }) {
               className={`w-4 h-4 ${
                 rating >= i
                   ? "text-yellow-400 fill-yellow-400"
-                  : rating >= i - 0.5
-                  ? "text-yellow-400"
                   : "text-slate-700"
               }`}
             />
@@ -94,17 +90,19 @@ function ReviewCard({ review }) {
 }
 
 /* ---------------- MAIN DASHBOARD ---------------- */
-
 export default function AdminDashboard() {
   const [summary, setSummary] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [error, setError] = useState(null);
 
+  // ✅ PUT YOUR REAL RENDER URL HERE
+  const BASE_URL = "https://YOUR-BACKEND.onrender.com";
+
   useEffect(() => {
     async function loadData() {
       try {
-        const summaryRes = await fetch("/api/admin/summary");
-        const reviewsRes = await fetch("/api/admin/reviews");
+        const summaryRes = await fetch(`${BASE_URL}/api/admin/summary`);
+        const reviewsRes = await fetch(`${BASE_URL}/api/admin/reviews`);
 
         if (!summaryRes.ok || !reviewsRes.ok) {
           throw new Error("API error");
@@ -115,10 +113,9 @@ export default function AdminDashboard() {
 
         setSummary(summaryData);
         setReviews(Array.isArray(reviewsData) ? reviewsData : []);
-        setError(null);
       } catch (err) {
-        console.error("ADMIN FETCH ERROR:", err);
-        setError("Failed to load admin data");
+        console.error(err);
+        setError("Backend not reachable");
       }
     }
 
@@ -141,18 +138,12 @@ export default function AdminDashboard() {
     );
   }
 
-  /* ---------------- RATING DISTRIBUTION (1 BAR PER STAR) ---------------- */
-
+  /* ---------- RATING DISTRIBUTION ---------- */
   const ratingBuckets = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
 
   reviews.forEach((r) => {
-    const rating = Number(r.rating);
-    if (!rating) return;
-
-    const bucket = Math.ceil(rating);
-    if (bucket >= 1 && bucket <= 5) {
-      ratingBuckets[bucket] += 1;
-    }
+    const rating = Math.ceil(Number(r.rating || 0));
+    if (rating >= 1 && rating <= 5) ratingBuckets[rating]++;
   });
 
   const ratingDistData = Object.entries(ratingBuckets).map(
@@ -163,128 +154,53 @@ export default function AdminDashboard() {
     })
   );
 
-  /* ---------------- REVIEWS OVER TIME ---------------- */
-
+  /* ---------- REVIEWS OVER TIME ---------- */
   const trendMap = {};
-
   reviews.forEach((r) => {
     if (!r.timestamp) return;
-
-    let day = r.timestamp.includes("T")
-      ? r.timestamp.split("T")[0]
-      : r.timestamp.split(" ")[0];
-
+    const day = r.timestamp.split("T")[0];
     trendMap[day] = (trendMap[day] || 0) + 1;
   });
 
-  const trendData = Object.entries(trendMap)
-    .map(([date, reviews]) => ({ date, reviews }))
-    .sort((a, b) => new Date(a.date) - new Date(b.date));
+  const trendData = Object.entries(trendMap).map(([date, reviews]) => ({
+    date,
+    reviews,
+  }));
 
-  /* ---------------- RENDER ---------------- */
-
+  /* ---------- RENDER ---------- */
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-emerald-600 rounded-xl">
-            <BarChart2 className="text-white" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-white">
-              Admin Dashboard
-            </h1>
-            <p className="text-slate-400 text-sm">
-              AI-powered feedback analytics
-            </p>
-          </div>
-        </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 rounded-lg">
-          <Filter className="w-4 h-4" /> Filter
-        </button>
-      </div>
+      <h1 className="text-3xl font-bold text-white mb-6">
+        Admin Dashboard
+      </h1>
 
-      {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
         <KPICard
           title="Total Reviews"
           value={summary.total_reviews}
-          subtext="All time feedback"
+          subtext="All time"
           Icon={FileText}
         />
         <KPICard
           title="Average Rating"
           value={summary.avg_rating.toFixed(2)}
-          subtext="Out of 5 stars"
+          subtext="Out of 5"
           Icon={Star}
         />
-        <KPICard
-          title="Positive Sentiment"
-          value="—"
-          subtext="Not calculated yet"
-          Icon={TrendingUp}
-        />
-        <KPICard
-          title="Actionable Items"
-          value="—"
-          subtext="Not calculated yet"
-          Icon={AlertCircle}
-        />
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
-        <div className="bg-slate-900 p-6 rounded-xl border border-slate-800">
-          <h3 className="font-bold mb-4">Rating Distribution</h3>
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart layout="vertical" data={ratingDistData}>
-              <XAxis type="number" hide />
-              <YAxis dataKey="stars" type="category" />
-              <Tooltip />
-              <Bar dataKey="count">
-                {ratingDistData.map((d, i) => (
-                  <Cell key={i} fill={d.color} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="bg-slate-900 p-6 rounded-xl border border-slate-800">
-          <h3 className="font-bold mb-4">Reviews Over Time</h3>
-
-          {trendData.length === 0 ? (
-            <p className="text-slate-500 text-sm">
-              No review activity yet
-            </p>
-          ) : (
-            <ResponsiveContainer width="100%" height={260}>
-              <AreaChart data={trendData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis dataKey="date" />
-                <YAxis hide />
-                <Tooltip />
-                <Area
-                  type="monotone"
-                  dataKey="reviews"
-                  stroke="#10b981"
-                  fill="#10b981"
-                  fillOpacity={0.3}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-      </div>
-
-      {/* Reviews */}
-      <h2 className="text-xl font-bold mb-4">All Feedback</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {reviews.map((r, i) => (
-          <ReviewCard key={i} review={r} />
-        ))}
-      </div>
+      <ResponsiveContainer width="100%" height={300}>
+        <BarChart data={ratingDistData}>
+          <XAxis dataKey="stars" />
+          <YAxis />
+          <Tooltip />
+          <Bar dataKey="count">
+            {ratingDistData.map((d, i) => (
+              <Cell key={i} fill={d.color} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   );
 }
