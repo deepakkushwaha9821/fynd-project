@@ -101,16 +101,30 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/admin/summary").then((r) => r.json()),
-      fetch("/api/admin/reviews").then((r) => r.json()),
-    ])
-      .then(([s, r]) => {
-        setSummary(s || {});
-        setReviews(Array.isArray(r) ? r : []);
-      })
-      .catch(() => setError("Backend not reachable"));
-  }, []);
+  async function loadData() {
+    try {
+      const summaryRes = await fetch("/api/admin/summary");
+      const reviewsRes = await fetch("/api/admin/reviews");
+
+      if (!summaryRes.ok || !reviewsRes.ok) {
+        throw new Error("API error");
+      }
+
+      const summaryData = await summaryRes.json();
+      const reviewsData = await reviewsRes.json();
+
+      setSummary(summaryData);
+      setReviews(Array.isArray(reviewsData) ? reviewsData : []);
+      setError(null);
+    } catch (err) {
+      console.error("ADMIN FETCH ERROR:", err);
+      setError("Backend not reachable");
+    }
+  }
+
+  loadData();
+}, []);
+
 
   if (error) {
     return (
